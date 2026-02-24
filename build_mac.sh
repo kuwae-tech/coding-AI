@@ -60,6 +60,7 @@ echo -e "${CYAN}[3/5] 前回ビルドをクリア...${NC}"
 rm -rf build/ dist/
 
 echo -e "${CYAN}[4/5] .app をビルド中...${NC}"
+echo -e "${CYAN}      （基準: 現在ブランチの最新コード）${NC}"
 
 EXTRA_DATA_ARGS=(--add-data ".:.")
 

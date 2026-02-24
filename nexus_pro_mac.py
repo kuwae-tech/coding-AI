@@ -161,6 +161,7 @@ def ensure_ollama_running(retry_seconds: int = 30):
 
 
 def ensure_model_ready():
+    logger.info("モデル準備チェック開始: %s", MODEL_NAME)
     existing = list_models()
     if MODEL_NAME in existing:
         MODEL_READY_FLAG.write_text(datetime.now().isoformat(), encoding="utf-8")
@@ -183,6 +184,8 @@ def ensure_model_ready():
     else:
         # 2) 同梱なしなら pull へフォールバック
         logger.warning("同梱モデルが見つからないため、初回起動時に ollama pull へフォールバックします。")
+        if MODEL_READY_FLAG.exists():
+            logger.info("過去にモデル準備フラグを検出。再準備を試行します。")
         try:
             p = _run_logged(["ollama", "pull", MODEL_NAME], timeout=3600)
             if p.returncode != 0:
