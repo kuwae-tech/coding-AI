@@ -22,6 +22,7 @@ MODEL_DIR="$BUNDLED_MODELS_DIR/$MODEL_NAME"
 MODELFILE_PATH="$MODEL_DIR/Modelfile"
 OLLAMA_SETUP_ASSETS_DIR="ollama_setup_assets"
 APP_PATH="dist/${APP_NAME}.app"
+ICON_ARGS=()
 
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
@@ -60,16 +61,19 @@ echo -e "${CYAN}[1/5] 依存ライブラリを準備中...${NC}"
 "$PYTHON" -m pip install --quiet chromadb sentence-transformers 2>/dev/null || true
 
 echo -e "${CYAN}[2/5] アイコン生成...${NC}"
-ICON_ARGS=()
-if "$PYTHON" generate_icon.py; then
-  if [[ -f "icon.icns" ]]; then
-    ICON_ARGS=(--icon "icon.icns")
-    echo -e "${GREEN}✓ アイコン生成完了${NC}"
+if [[ -f "generate_icon.py" ]]; then
+  if "$PYTHON" generate_icon.py; then
+    if [[ -f "icon.icns" ]]; then
+      ICON_ARGS=(--icon "icon.icns")
+      echo -e "${GREEN}✓ アイコン生成完了${NC}"
+    else
+      echo -e "${YELLOW}⚠ icon.icns 未生成。アイコンなしで続行します${NC}"
+    fi
   else
-    echo -e "${YELLOW}⚠ icon.icns 未生成。アイコンなしで続行します${NC}"
+    echo -e "${YELLOW}⚠ アイコン生成失敗。アイコンなしで続行します${NC}"
   fi
 else
-  echo -e "${YELLOW}⚠ アイコン生成失敗。アイコンなしで続行します${NC}"
+  echo -e "${YELLOW}⚠ generate_icon.py が見つかりません。アイコンなしで続行します${NC}"
 fi
 
 echo -e "${CYAN}[3/5] 前回ビルドをクリア...${NC}"
