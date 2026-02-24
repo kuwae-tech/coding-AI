@@ -1,0 +1,57 @@
+name: build-mac
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main", "work" ]
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build app
+        shell: bash
+        run: |
+          chmod +x ./build_mac.sh
+          ./build_mac.sh
+
+      - name: Check output paths
+        shell: bash
+        run: |
+          echo "pwd=$(pwd)"
+          echo "dist list:"
+          ls -la dist || true
+          if [ -d "dist/NEXUS PRO.app" ]; then
+            echo "FOUND_APP=dist/NEXUS PRO.app"
+          else
+            echo "WARN: app not found"
+          fi
+
+      - name: Zip app
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          if [ -d "dist/NEXUS PRO.app" ]; then
+            ditto -c -k --sequesterRsrc --keepParent "dist/NEXUS PRO.app" "artifacts/NEXUS PRO.app.zip"
+            echo "ZIPPED=artifacts/NEXUS PRO.app.zip"
+          else
+            echo "WARN: skip zip, app missing"
+          fi
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-pro-mac-app
+          path: |
+            artifacts/NEXUS PRO.app.zip
+            dist/NEXUS PRO.app
+            ~/Library/Logs/NEXUS_PRO/startup.log
+          if-no-files-found: warn
