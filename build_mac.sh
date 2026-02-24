@@ -38,18 +38,20 @@ PYTHON="$(command -v python3)"
 echo -e "${GREEN}✓ Python: $($PYTHON --version)${NC}"
 
 mkdir -p "$BUNDLED_MODELS_DIR"
+HAS_BUNDLED_MODEL=1
 if [[ ! -d "$MODEL_DIR" ]]; then
-  echo -e "${RED}❌ 同梱モデルフォルダが見つかりません: $MODEL_DIR${NC}"
-  echo "   例: mkdir -p '$MODEL_DIR'"
-  echo "       その中に Modelfile と必要ファイルを配置してください。"
-  exit 1
-fi
-if [[ ! -f "$MODELFILE_PATH" ]]; then
-  echo -e "${RED}❌ Modelfile が見つかりません: $MODELFILE_PATH${NC}"
-  exit 1
+  HAS_BUNDLED_MODEL=0
+  echo -e "${YELLOW}⚠ 同梱モデルフォルダが見つかりません: $MODEL_DIR${NC}"
+  echo "   同梱なしでビルドを継続します（初回起動時に Ollama pull/create へフォールバック）。"
+elif [[ ! -f "$MODELFILE_PATH" ]]; then
+  HAS_BUNDLED_MODEL=0
+  echo -e "${YELLOW}⚠ Modelfile が見つかりません: $MODELFILE_PATH${NC}"
+  echo "   同梱なしでビルドを継続します（初回起動時に Ollama pull/create へフォールバック）。"
 fi
 
-echo -e "${GREEN}✓ 同梱モデル確認OK${NC}"
+if [[ "$HAS_BUNDLED_MODEL" -eq 1 ]]; then
+  echo -e "${GREEN}✓ 同梱モデル確認OK${NC}"
+fi
 
 echo -e "${CYAN}[1/5] 依存ライブラリを準備中...${NC}"
 "$PYTHON" -m pip install --quiet --upgrade pip

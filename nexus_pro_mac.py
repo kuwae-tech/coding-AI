@@ -175,16 +175,27 @@ def ensure_model_ready():
 
     model_dir = bundled_model_dir()
     modelfile = model_dir / "Modelfile"
-    if not modelfile.exists():
-        return False, f"同梱モデルが見つかりません: {modelfile}\nログ保存先: {STARTUP_LOG_PATH}"
+    if modelfile.exists():
+        try:
+            p = _run_logged(["ollama", "create", MODEL_NAME, "-f", str(modelfile)], cwd=str(model_dir), timeout=3600)
+            if p.returncode != 0:
+                logger.warning("同梱モデル create に失敗。pull フォールバックを試行します。")
+            elif MODEL_NAME in list_models():
+                MODEL_READY_FLAG.write_text(datetime.now().isoformat(), encoding="utf-8")
+                logger.info("モデル準備: 同梱モデル create 完了 (%s)", MODEL_NAME)
+                return True, ""
+        except Exception:
+            logger.exception("同梱モデル create 失敗。pull フォールバックを試行します。")
+
+    logger.warning("同梱モデル未配置または準備失敗のため、ollama pull フォールバックを開始します: %s", MODEL_NAME)
 
     if MODEL_READY_FLAG.exists():
         return False, f"モデル『{MODEL_NAME}』が未登録ですが初回自動準備は実施済みです。\nログ保存先: {STARTUP_LOG_PATH}"
 
     try:
-        p = _run_logged(["ollama", "create", MODEL_NAME, "-f", str(modelfile)], cwd=str(model_dir), timeout=3600)
+        p = _run_logged(["ollama", "pull", MODEL_NAME], timeout=3600)
         if p.returncode != 0:
-            return False, f"モデル準備に失敗しました。\nログ保存先: {STARTUP_LOG_PATH}"
+            return False, f"モデル準備に失敗しました（同梱 create / pull）。\nログ保存先: {STARTUP_LOG_PATH}"
     except Exception as e:
         logger.exception("モデル準備失敗")
         return False, f"モデル準備でエラーが発生しました: {e}\nログ保存先: {STARTUP_LOG_PATH}"
